@@ -1,0 +1,212 @@
+#!/usr/bin/env python
+
+from collections import defaultdict
+import itertools
+import re
+import sys
+import time
+
+ip  = 0
+
+global output
+
+class Interp(object):
+    def __init__(self):
+        self.rel_base = 0
+        self.mem      = defaultdict(lambda: 0)
+        self.board    = defaultdict(lambda: 0)
+        self.pc       = 0
+        self.input    = []
+        self.output   = []
+        self.minx     = 0
+        self.maxx     = 0
+        self.miny     = 0
+        self.maxy     = 0
+        self.score    = 0
+        # parse the input file
+        for i, v in enumerate(open(sys.argv[1], "r").read().strip().split(',')):
+            self.mem[i] = int(v)
+            
+        self.mem[0]   = 2
+        self.funcs = { 1: (self.op1, 4, False), # add
+                  2: (self.op2, 4), # mult
+                  3: (self.op3, 2),  # input
+                  4: (self.op4, 2), # output
+                  5: (self.op5, 3), # jnz
+                  6: (self.op6, 3), # jz
+                  7: (self.op7, 4), # lt
+                  8: (self.op8, 4), # eq
+                  9: (self.op9, 2), # adj rel_base
+                 99: (self.op99, 1) # halt
+                }
+            
+    def step(self):
+        ip = self.pc
+        m  = self.mem[ip]
+        mode3, mode2, mode1, op = ( int(m / 10000) % 10,
+                                    int(m / 1000) % 10,
+                                    int(m / 100) % 10,
+                                    m % 100 )
+        arg = [self.mem[ip + 1], self.mem[ip + 2], self.mem[ip + 3]]
+        if mode1 == 0 and op != 3:
+            arg[0] = self.mem[arg[0]]
+        if mode1 == 2:
+            if op != 3:
+                arg[0] = self.mem[arg[0] + self.rel_base]
+            else:
+                arg[0] += self.rel_base
+        if mode2 == 0:
+            arg[1] = self.mem[arg[1]]
+        if mode2 == 2:
+            arg[1] = self.mem[arg[1] + self.rel_base]
+        if mode3 == 2:
+            arg[2] += self.rel_base
+        #print "%d: %d" % (self.pc, op)
+        self.pc += self.funcs[op][1]
+        #print "pc: %d %d %d %d %d" % (ip, op, arg[0], arg[1], arg[2])
+        return self.funcs[op][0](arg)
+
+	# op code functions return -1: end of program, 0: wiating for input, 1: instruction completed
+    def op1(self, arg):
+        self.mem[arg[2]] = arg[0] + arg[1]
+        return 1
+    
+    def op2(self, arg):
+        self.mem[arg[2]] = arg[0] * arg[1]
+        return 1
+        
+    def display(self):
+        #objs = [['   ', '###', ' B ', '   ', '   '],
+        #        ['   ', '###', 'BBB', '---', ' O '],
+        #        ['   ', '###', ' B ', '   ', '   ']]
+        objs = [[' ', '#', 'B', '=', 'O']]
+        print
+        print "Score:", self.score
+        sys.stdout.write("   ")
+        for i in range(self.maxx + 1):
+            sys.stdout.write("%d " % (i % 10),)
+        print
+        print "   " + ("--" * (self.maxx + 1)) + " "
+        for row in range(self.maxy + 1):
+            print "  |" + ("-|" * (self.maxx + 1))
+            for objrow in range(len(objs)):
+                sys.stdout.write("%2d|" % row)
+                for col in range(self.maxx + 1):
+                    #print >>sys.stderr,\
+                    #   "(%d, %d): %d : %d: %s" % (col, row, self.board[(col, row)], \
+                    #        objrow, objs[objrow][self.board[(col, row)]])
+                    sys.stdout.write("%s|" % (objs[objrow][self.board[(col, row)]],))
+                print
+        sys.stdout.write(" ")
+        for i in range(self.maxx + 1):
+            sys.stdout.write("%d " % (i % 10),)
+        print
+
+    # input requests will return 0 (so the main loop can get an input), then process it
+    def op3(self, arg):
+        # show what we're up against when asking for intput
+        self.display()
+        if len(self.input) == 0:
+            return 0
+        #print "<== %d" % self.input[0]
+        self.mem[arg[0]] = self.input[0]
+        self.input = []
+        return 1
+
+    def op4(self, arg):
+        self.output.append(arg[0])
+        #print "==> %d" % (arg[0], )
+        # outputs which change board are to (-1, 0)
+        if len(self.output) and (len(self.output) % 3 ) == 0:
+           x, y, v = self.output[-3:]
+           if x == -1 and y == 0:
+               self.score = v
+               return 1
+           self.board[(x, y)] = v
+           if x < self.minx:
+               self.minx = x
+           if x > self.maxx:
+               self.maxx = x
+           if y < self.miny:
+               self.miny = y
+           if y > self.maxy:
+               self.maxy = y
+        return 1
+
+    def op5(self, arg):
+        if arg[0] != 0:
+            self.pc = arg[1]
+        return 1
+
+    def op6(self, arg):
+        if arg[0] == 0:
+            self.pc = arg[1]
+        return 1
+            
+    def op7(self, arg):
+        v = 0
+        if arg[0] < arg[1]:
+            v = 1
+        self.mem[arg[2]] = v
+        return 1
+                 
+    def op8(self, arg):
+        v = 0
+        if arg[0] == arg[1]:
+            v = 1
+        self.mem[arg[2]] = v
+        return 1
+                 
+    def op9(self, arg):
+        self.rel_base += arg[0]
+        return 1
+    
+    def op99(self, arg):
+    	objs = ['Empty', 'Wall', 'Block', 'H_paddle', 'Ball']
+        counts = [0 for i in range(len(objs))]
+        for k, v in self.board.iteritems():
+            counts[v] += 1
+        for i, name in enumerate(objs):
+            print name, counts[i]   
+
+        return -1
+        #sys.exit(0)
+
+def main():
+    interp = Interp()
+    count = 0
+    while True:
+        # display the board every 10^6 instructions
+        if (count % 1000000) == 999999:
+            interp.display()
+        count += 1
+        s = interp.step()
+        if s > 0:
+            # normal execution
+            continue
+        if s < 0:
+            # program termination
+            print "Score: ", interp.score
+            print "Instructions executed:", count
+            sys.exit(0)
+        while True:
+            interp.input.append(count %3 - 1)
+            break
+            # dead code (replaced by above crude hack)
+            l = raw_input("> ")
+            l = l.upper()
+            if l.startswith('L'):
+                interp.input.append(-1)
+                break
+            elif l.startswith('R'):
+                interp.input.append(1)
+                break
+            elif l.startswith(' '):
+                interp.input.append(0)
+                break
+
+if __name__ == "__main__":
+    main()
+            
+    
+

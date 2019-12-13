@@ -1,0 +1,144 @@
+#!/usr/bin/env python
+
+from collections import defaultdict
+import itertools
+import re
+import sys
+import time
+
+ip  = 0
+
+global output
+
+class Interp(object):
+    def __init__(self, inputs):
+        self.rel_base = 0
+        self.mem      = defaultdict(lambda: 0)
+        self.panel    = defaultdict(lambda: 0)
+        self.pc       = 0
+        self.inputs   = inputs[:]
+        self.x        = 10000
+        self.y        = 10000
+        self.dir      = 0
+        self.moves    = [(0, -1), (-1, 0), (0, 1), (1, 0)]
+        self.painted  = set()
+        self.outval   = 0
+        self.output   = []
+        self.minx     = self.x
+        self.maxx     = self.x
+        self.miny     = self.y
+        self.maxy     = self.y
+        self.panel[(self.x, self.y)] = 1
+        for i, v in enumerate(open(sys.argv[1], "r").read().strip().split(',')):
+            self.mem[i] = int(v)
+        self.funcs = { 1: (self.op1, 4, False), # add
+                  2: (self.op2, 4, False), # mult
+                  3: (self.op3, 2, True),  # input
+                  4: (self.op4, 2, False), # output
+                  5: (self.op5, 3, False), # jnz
+                  6: (self.op6, 3, False), # jz
+                  7: (self.op7, 4, False), # lt
+                  8: (self.op8, 4, False), # eq
+                  9: (self.op9, 2, False), # adj rel_base
+                 99: (self.op99, 1, False) # halt
+                }
+            
+    def step(self):
+        ip = self.pc
+        m  = self.mem[ip]
+        mode3, mode2, mode1, op = ( int(m / 10000) % 10,
+                                    int(m / 1000) % 10,
+                                    int(m / 100) % 10,
+                                    m % 100 )
+        arg = [self.mem[ip + 1], self.mem[ip + 2], self.mem[ip + 3]]
+        if mode1 == 0 and op != 3:
+            arg[0] = self.mem[arg[0]]
+        if mode1 == 2:
+            if op != 3:
+                arg[0] = self.mem[arg[0] + self.rel_base]
+            else:
+                arg[0] += self.rel_base
+        if mode2 == 0:
+            arg[1] = self.mem[arg[1]]
+        if mode2 == 2:
+            arg[1] = self.mem[arg[1] + self.rel_base]
+        if mode3 == 2:
+            arg[2] += self.rel_base
+        #print "%d: %d" % (self.pc, op)
+        self.pc += self.funcs[op][1]
+        #print "pc: %d %d %d %d %d" % (ip, op, arg[0], arg[1], arg[2])
+        return self.funcs[op][0](arg)
+    
+    def op1(self, arg):
+        self.mem[arg[2]] = arg[0] + arg[1]
+        return True
+    
+    def op2(self, arg):
+        self.mem[arg[2]] = arg[0] * arg[1]
+        return True
+        
+    def op3(self, arg):
+        self.mem[arg[0]] = self.panel[(self.x, self.y)]
+        #print "<== %d ( %d, %d )" % (self.panel[(self.x, self.y)], self.x, self.y)
+        return True
+
+    def op4(self, arg):
+
+        self.output.append(arg[0])
+        #print "==> %d" % (arg[0], )
+        if len(self.output) and (len(self.output) % 3 ) == 0:
+           x, y, v = self.output[-3:]
+           self.panel[(x, y)] = v
+        return True
+
+    def op5(self, arg):
+        if arg[0] != 0:
+            self.pc = arg[1]
+        return True
+
+    def op6(self, arg):
+        if arg[0] == 0:
+            self.pc = arg[1]
+        return True
+            
+    def op7(self, arg):
+        v = 0
+        if arg[0] < arg[1]:
+            v = 1
+        self.mem[arg[2]] = v
+        return True
+                 
+    def op8(self, arg):
+        v = 0
+        if arg[0] == arg[1]:
+            v = 1
+        self.mem[arg[2]] = v
+        return True
+                 
+    def op9(self, arg):
+        self.rel_base += arg[0]
+        return True
+    
+    def op99(self, arg):
+    	objs = ['Empty', 'Wall', 'Block', 'H_paddle', 'Ball']
+        counts = [0 for i in range(len(objs))]
+        for k, v in self.panel.iteritems():
+            counts[v] += 1
+        for i, name in enumerate(objs):
+            print name, counts[i]
+        print "Total:", sum(counts)
+
+        return False
+        #sys.exit(0)
+
+def main():
+    interp = Interp([1])
+    while interp.step():
+        #print interp.mem
+        pass
+
+if __name__ == "__main__":
+    main()
+            
+    
+

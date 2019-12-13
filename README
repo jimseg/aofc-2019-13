@@ -1,0 +1,15 @@
+
+13a.input.txt - supplied input
+13b.input.txt - input modified to put a wall across bottom row
+
+13a - python 2.7 script to count up number of empty/block/wall/... items
+
+13b - attempts to play game, whenever intCode asks for input, displays board and asks for
+      'L'/'R'/' ' to moe paddle when run with ./13b 13a.input.txt
+
+       when run with 13b.input.txt, puts a wall across the bottom of the board, eventaully hangs 
+       with a small (6) number of un-hit blocks
+
+13c - like 13b, except every input request cycles through L/R/Neutral, eventaully removes all
+      blocks when run as ./13c 13b.input.txt
+      failes just as 13b does when using the normal input file
