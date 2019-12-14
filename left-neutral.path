@@ -1,0 +1,9 @@
+Ball (16, 21) Paddle (18, 24)
+Ball (17, 22) Paddle (18, 24)   Ball moving SE, 1 unit NNW of paddle  (2 N, 1 W)
+<== Left
+Ball (17, 22) Paddle (17, 24)   paddle shifts W 1, ball is 2 units N of paddle 
+Ball (18, 23) Paddle (17, 24)   ball moves SE 1,   ball is 1 unit N and 1 unit E of paddle
+Ball (19, 24) Paddle (17, 24)   ball passes 2 units E of paddle
+<== Neutral
+Ball (20, 25) Paddle (17, 24)   ball reaches bottom row, game over
+

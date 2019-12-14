@@ -1,0 +1,21 @@
+Ball (16, 21) Paddle (18, 24)
+Ball (17, 22) Paddle (18, 24)    ball moving SE, 1 unit NNW of paddle  (2 N, 1 W)
+<== neutral 
+Ball (18, 23) Paddle (18, 24)    ball moves 1 unit SE, ball is 1 unit N from paddle
+Ball (19, 22) Paddle (18, 24)    ball moves 1 unit NE, ball is 2 units N and 1 E from paddle
+<== right
+Ball (19, 22) Paddle (19, 24)    paddle shifts E 1 unit, ball is 2 units N from paddle
+Ball (20, 21) Paddle (19, 24)    ball moves 1 unit NE, ball is 3 units N and 1 E from paddle
+Ball (21, 20) Paddle (19, 24)    ball moves 1 unit NE, ball is 4 units N and 2 E from paddle
+<== right
+Ball (21, 20) Paddle (20, 24)    paddle shifts E 1 unit, ball is 4 units N and 1 E from paddle
+Ball (22, 21) Paddle (20, 24)    ball moves 1 unit SE, ball is 3 units N and 2 E from paddle
+Ball (23, 22) Paddle (20, 24)    ball moves 1 unit SE, ball is 2 units N and 3 E from paddle
+<== right
+Ball (23, 22) Paddle (21, 24)    paddle shifts E 1 unit, ball is 2 units N and 2 E from paddle
+Ball (24, 23) Paddle (21, 24)    ball moves 1 unit SE, ball is 1 unit N and 3 E from paddle
+Ball (25, 24) Paddle (21, 24)    ball moves 1 unit SE, ball is 4 units E from paddle
+<== right
+Ball (25, 24) Paddle (22, 24)    paddle shifts E 1 unit, ball is 3 units E from paddle
+Ball (26, 25) Paddle (22, 24)    ball reaches bottom row, game over
+
